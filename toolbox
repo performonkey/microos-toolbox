@@ -23,6 +23,7 @@ TOOLBOX_NAME=toolbox-"${USER}"
 TOOLBOXRC="${HOME}"/.toolboxrc
 TOOLBOX_SHELL="/bin/bash"
 SUDO=
+TOOLBOX_CREATE_ARGS=
 
 if command -v podman &> /dev/null ; then
     CLI=podman
@@ -207,6 +208,7 @@ container_create() {
                  ${CREATE_AS_USER} \
                  --volume /etc/machine-id:/etc/machine-id:ro \
                  --volume /etc/localtime:/etc/localtime:ro \
+                 ${TOOLBOX_CREATE_ARGS[@]} \
                  "$TOOLBOX_IMAGE" sleep +Inf > /dev/null; then
         echo "$0: failed to create container '$TOOLBOX_NAME'"
         exit 1
@@ -278,6 +280,7 @@ Options:
   -I/--img <image>: Pulls the image called <image>
   -i/--image <image_URI>: Pulls <image_URI> as a container image (use this
                           alternatively to -R and -I)
+  --podman-create-args <args>: Pass addition args to podman create command
 
 You may override the following variables by setting them in ${TOOLBOXRC}:
 - REGISTRY: The registry to pull from. Default: $REGISTRY
@@ -323,7 +326,7 @@ main() {
         esac
     fi
 
-    ARGS=$(getopt -o hrunSPt:R:I:c:i:X: --long help,root,user,nostop,sandbox,no-pull,tag:,reg:,img:,container:,image:,runtime: -n toolbox -- "$@")
+    ARGS=$(getopt -o hrunSPt:R:I:c:i:X: --long help,root,user,nostop,sandbox,no-pull,tag:,reg:,img:,container:,image:,runtime:,podman-create-args: -n toolbox -- "$@")
     eval set -- "$ARGS"
     while true; do
         case "$1" in
@@ -392,6 +395,10 @@ main() {
             -i|--image)
                 REGISTRY=""
                 IMAGE=$2
+                shift 2
+                ;;
+            -a|--podman-create-args)
+                TOOLBOX_CREATE_ARGS=($2)
                 shift 2
                 ;;
             --)
